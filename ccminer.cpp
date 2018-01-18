@@ -169,7 +169,7 @@ volatile bool pool_is_switching = false;
 volatile int pool_switch_count = 0;
 bool conditional_pool_rotate = false;
 
-extern char* opt_scratchpad_url;
+//extern char* opt_scratchpad_url;
 
 // current connection
 char *rpc_user = NULL;
@@ -662,7 +662,7 @@ static void calc_network_diff(struct work *work)
 	if (opt_algo == ALGO_DECRED) nbits = work->data[29];
 	if (opt_algo == ALGO_SIA) nbits = work->data[11]; // unsure if correct
 	if (opt_algo == ALGO_EQUIHASH) {
-		net_diff = equi_network_diff(work);
+		//net_diff = equi_network_diff(work);
 		return;
 	}
 
@@ -701,7 +701,7 @@ static bool work_decode(const json_t *val, struct work *work)
 	case ALGO_CRYPTOLIGHT:
 	case ALGO_CRYPTONIGHT:
 	case ALGO_WILDKECCAK:
-		return rpc2_job_decode(val, work);
+		return false;//rpc2_job_decode(val, work);
 	default:
 		data_size = 128;
 		adata_sz = data_size / 4;
@@ -880,8 +880,8 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 		struct work submit_work;
 		memcpy(&submit_work, work, sizeof(struct work));
 		if (!hashlog_already_submittted(submit_work.job_id, submit_work.nonces[idnonce])) {
-			if (rpc2_stratum_submit(pool, &submit_work))
-				hashlog_remember_submit(&submit_work, submit_work.nonces[idnonce]);
+		//	if (rpc2_stratum_submit(pool, &submit_work))
+		//		hashlog_remember_submit(&submit_work, submit_work.nonces[idnonce]);
 			stratum.job.shares_count++;
 		}
 		return true;
@@ -891,8 +891,8 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 		struct work submit_work;
 		memcpy(&submit_work, work, sizeof(struct work));
 		//if (!hashlog_already_submittted(submit_work.job_id, submit_work.nonces[idnonce])) {
-			if (equi_stratum_submit(pool, &submit_work))
-				hashlog_remember_submit(&submit_work, submit_work.nonces[idnonce]);
+		//	if (equi_stratum_submit(pool, &submit_work))
+		//		hashlog_remember_submit(&submit_work, submit_work.nonces[idnonce]);
 			stratum.job.shares_count++;
 		//}
 		return true;
@@ -1526,8 +1526,10 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 	uchar merkle_root[64] = { 0 };
 	int i;
 
-	if (sctx->rpc2)
-		return rpc2_stratum_gen_work(sctx, work);
+	if (sctx->rpc2) {
+		printf("no support of rpc2!!!");
+		return false;
+	}
 
 	if (!sctx->job.job_id) {
 		// applog(LOG_WARNING, "stratum_gen_work: job not yet retrieved");
@@ -1712,7 +1714,7 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 			work_set_target(work, sctx->job.diff / (128.0 * opt_difficulty));
 			break;
 		case ALGO_EQUIHASH:
-			equi_work_set_target(work, sctx->job.diff / opt_difficulty);
+			//equi_work_set_target(work, sctx->job.diff / opt_difficulty);
 			break;
 		default:
 			work_set_target(work, sctx->job.diff / opt_difficulty);
@@ -2073,7 +2075,7 @@ static void *miner_thread(void *userdata)
 			gpulog(LOG_DEBUG, thr_id, "no data");
 			continue;
 		}
-		if (opt_algo == ALGO_WILDKECCAK && !scratchpad_size) {
+		if (opt_algo == ALGO_WILDKECCAK && !0) {
 			sleep(1);
 			if (!thr_id) pools[cur_pooln].wait_time += 1;
 			continue;
@@ -2348,7 +2350,7 @@ static void *miner_thread(void *userdata)
 			rc = scanhash_deep(thr_id, &work, max_nonce, &hashes_done);
 			break;
 		case ALGO_EQUIHASH:
-			rc = scanhash_equihash(thr_id, &work, max_nonce, &hashes_done);
+			rc = false;//scanhash_equihash(thr_id, &work, max_nonce, &hashes_done);
 			break;
 		case ALGO_FRESH:
 			rc = scanhash_fresh(thr_id, &work, max_nonce, &hashes_done);
@@ -2473,7 +2475,7 @@ static void *miner_thread(void *userdata)
 		//	rc = scanhash_whirlx(thr_id, &work, max_nonce, &hashes_done);
 		//	break;
 		case ALGO_WILDKECCAK:
-			rc = scanhash_wildkeccak(thr_id, &work, max_nonce, &hashes_done);
+			rc = false;//scanhash_wildkeccak(thr_id, &work, max_nonce, &hashes_done);
 			break;
 		case ALGO_TIMETRAVEL:
 			rc = scanhash_timetravel(thr_id, &work, max_nonce, &hashes_done);
@@ -2952,7 +2954,7 @@ wait_stratum_url:
 		}
 
 		if (stratum.rpc2) {
-			rpc2_stratum_thread_stuff(pool);
+			//rpc2_stratum_thread_stuff(pool);
 		}
 
 		if (switchn != pool_switch_count) goto pool_switched;
@@ -3167,7 +3169,7 @@ void parse_arg(int key, char *arg)
 		break;
 	}
 	case 'k':
-		opt_scratchpad_url = strdup(arg);
+		//opt_scratchpad_url = strdup(arg);
 		break;
 	case 'i':
 		d = atof(arg);
@@ -3968,14 +3970,14 @@ int main(int argc, char *argv[])
 	}
 
 	if (opt_algo == ALGO_CRYPTONIGHT || opt_algo == ALGO_CRYPTOLIGHT) {
-		rpc2_init();
+		//rpc2_init();
 		if (!opt_quiet) applog(LOG_INFO, "Using JSON-RPC 2.0");
 	}
 
 	if (opt_algo == ALGO_WILDKECCAK) {
-		rpc2_init();
-		if (!opt_quiet) applog(LOG_INFO, "Using JSON-RPC 2.0");
-		GetScratchpad();
+		//rpc2_init();
+	//	if (!opt_quiet) applog(LOG_INFO, "Using JSON-RPC 2.0");
+	//	GetScratchpad();
 	}
 
 	flags = !opt_benchmark && strncmp(rpc_url, "https:", 6)

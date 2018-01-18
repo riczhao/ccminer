@@ -59,7 +59,6 @@ void algo_free_all(int thr_id)
 	free_cryptonight(thr_id);
 	free_decred(thr_id);
 	free_deep(thr_id);
-	free_equihash(thr_id);
 	free_keccak256(thr_id);
 	free_fresh(thr_id);
 	free_fugue256(thr_id);
@@ -96,7 +95,7 @@ void algo_free_all(int thr_id)
 	free_veltor(thr_id);
 	free_whirl(thr_id);
 	//free_whirlx(thr_id);
-	free_wildkeccak(thr_id);
+	//free_wildkeccak(thr_id);
 	free_x11evo(thr_id);
 	free_x11(thr_id);
 	free_x13(thr_id);

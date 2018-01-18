@@ -1321,7 +1321,7 @@ bool stratum_authorize(struct stratum_ctx *sctx, const char *user, const char *p
 	bool ret = false;
 
 	if (sctx->rpc2)
-		return rpc2_stratum_authorize(sctx, user, pass);
+		return false;//rpc2_stratum_authorize(sctx, user, pass);
 
 	s = (char*)malloc(80 + strlen(user) + strlen(pass));
 	sprintf(s, "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\"%s\", \"%s\"]}",
@@ -1455,7 +1455,7 @@ static bool stratum_notify(struct stratum_ctx *sctx, json_t *params)
 	bool has_claim = !strcasecmp(algo, "lbry");
 
 	if (sctx->is_equihash) {
-		return equi_stratum_notify(sctx, params);
+		return false;//equi_stratum_notify(sctx, params);
 	}
 
 	job_id = json_string_value(json_array_get(params, p++));
@@ -1787,7 +1787,7 @@ static bool stratum_show_message(struct stratum_ctx *sctx, json_t *id, json_t *p
 	bool ret;
 
 	if (sctx->is_equihash)
-		return equi_stratum_show_message(sctx, id, params);
+		return false;//equi_stratum_show_message(sctx, id, params);
 
 	val = json_array_get(params, 0);
 	if (val)
@@ -1864,7 +1864,7 @@ bool stratum_handle_method(struct stratum_ctx *sctx, const char *s)
 	}
 	if (!strcasecmp(method, "mining.set_target")) {
 		sctx->is_equihash = true;
-		ret = equi_stratum_set_target(sctx, params);
+		ret = false;//equi_stratum_set_target(sctx, params);
 		goto out;
 	}
 	if (!strcasecmp(method, "mining.set_extranonce")) {
@@ -1895,7 +1895,7 @@ bool stratum_handle_method(struct stratum_ctx *sctx, const char *s)
 		goto out;
 	}
 	if (sctx->rpc2 && !strcasecmp(method, "job")) { // xmr/bbr
-		ret = rpc2_stratum_job(sctx, id, params);
+		ret = false;//rpc2_stratum_job(sctx, id, params);
 		goto out;
 	}
 

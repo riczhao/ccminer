@@ -22,8 +22,6 @@ ccminer_SOURCES	= elist.h miner.h compat.h \
 			  ccminer.cpp pools.cpp util.cpp bench.cpp bignum.cpp \
 			  api.cpp hashlog.cpp nvml.cpp stats.cpp sysinfos.cpp cuda.cpp \
 			  nvsettings.cpp \
-			  equi/equi-stratum.cpp equi/equi.cpp equi/blake2/blake2bx.cpp \
-			  equi/equihash.cpp equi/cuda_equi.cu \
 			  heavy/heavy.cu \
 			  heavy/cuda_blake512.cu heavy/cuda_blake512.h \
 			  heavy/cuda_combine.cu heavy/cuda_combine.h \
@@ -45,7 +43,6 @@ ccminer_SOURCES	= elist.h miner.h compat.h \
 			  Algo256/blake256.cu Algo256/decred.cu Algo256/vanilla.cu Algo256/keccak256.cu \
 			  Algo256/blake2s.cu sph/blake2s.c \
 			  Algo256/bmw.cu Algo256/cuda_bmw.cu \
-			  crypto/xmr-rpc.cpp crypto/wildkeccak-cpu.cpp crypto/wildkeccak.cu \
 			  crypto/cryptolight.cu crypto/cryptolight-core.cu crypto/cryptolight-cpu.cpp \
 			  crypto/cryptonight.cu crypto/cryptonight-core.cu crypto/cryptonight-extra.cu \
 			  crypto/cryptonight-cpu.cpp crypto/oaes_lib.cpp crypto/aesb.cpp crypto/cpu/c_keccak.c \

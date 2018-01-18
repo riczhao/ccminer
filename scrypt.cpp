@@ -42,7 +42,7 @@ using namespace Concurrency;
 #include <stdint.h>
 #include <string.h>
 
-#include <emmintrin.h>
+#include "SSE2NEON.h"
 #ifndef __APPLE__
 #include <malloc.h>
 #endif
@@ -54,7 +54,7 @@ using namespace Concurrency;
 #endif
 
 // A thin wrapper around the builtin __m128i type
-class uint32x4_t
+class _uint32x4_t_
 {
 public:
 #if WIN32
@@ -68,28 +68,28 @@ public:
 	void * operator new[](size_t size) throw(std::bad_alloc) { void *p; if (posix_memalign(&p, 16, size) < 0) { static const std::bad_alloc nomem; throw nomem; } return (p); }
 	void operator delete[](void *p) { free(p); }
 #endif
-	uint32x4_t() { };
-	uint32x4_t(const __m128i init) { val = init; }
-	uint32x4_t(const uint32_t init) { val = _mm_set1_epi32((int)init); }
-	uint32x4_t(const uint32_t a, const uint32_t b, const uint32_t c, const uint32_t d) { val = _mm_setr_epi32((int)a,(int)b,(int)c,(int)d); }
+	_uint32x4_t_() { };
+	_uint32x4_t_(const __m128i init) { val = init; }
+	_uint32x4_t_(const uint32_t init) { val = _mm_set1_epi32((int)init); }
+	_uint32x4_t_(const uint32_t a, const uint32_t b, const uint32_t c, const uint32_t d) { val = _mm_setr_epi32((int)a,(int)b,(int)c,(int)d); }
 	inline operator const __m128i() const { return val; }
-	inline const uint32x4_t operator+(const uint32x4_t &other) const { return _mm_add_epi32(val, other); }
-	inline const uint32x4_t operator+(const uint32_t other) const { return _mm_add_epi32(val, _mm_set1_epi32((int)other)); }
-	inline uint32x4_t& operator+=(const uint32x4_t other) { val = _mm_add_epi32(val, other); return *this; }
-	inline uint32x4_t& operator+=(const uint32_t other) { val = _mm_add_epi32(val, _mm_set1_epi32((int)other)); return *this; }
-	inline const uint32x4_t operator&(const uint32_t other) const { return _mm_and_si128(val, _mm_set1_epi32((int)other)); }
-	inline const uint32x4_t operator&(const uint32x4_t &other) const { return _mm_and_si128(val, other); }
-	inline const uint32x4_t operator|(const uint32x4_t &other) const { return _mm_or_si128(val, other); }
-	inline const uint32x4_t operator^(const uint32x4_t &other) const { return _mm_xor_si128(val, other); }
-	inline const uint32x4_t operator<<(const int num) const { return _mm_slli_epi32(val, num); }
-	inline const uint32x4_t operator>>(const int num) const { return _mm_srli_epi32(val, num); }
+	inline const _uint32x4_t_ operator+(const _uint32x4_t_ &other) const { return _mm_add_epi32(val, other); }
+	inline const _uint32x4_t_ operator+(const uint32_t other) const { return _mm_add_epi32(val, _mm_set1_epi32((int)other)); }
+	inline _uint32x4_t_& operator+=(const _uint32x4_t_ other) { val = _mm_add_epi32(val, other); return *this; }
+	inline _uint32x4_t_& operator+=(const uint32_t other) { val = _mm_add_epi32(val, _mm_set1_epi32((int)other)); return *this; }
+	inline const _uint32x4_t_ operator&(const uint32_t other) const { return _mm_and_si128(val, _mm_set1_epi32((int)other)); }
+	inline const _uint32x4_t_ operator&(const _uint32x4_t_ &other) const { return _mm_and_si128(val, other); }
+	inline const _uint32x4_t_ operator|(const _uint32x4_t_ &other) const { return _mm_or_si128(val, other); }
+	inline const _uint32x4_t_ operator^(const _uint32x4_t_ &other) const { return _mm_xor_si128(val, other); }
+	inline const _uint32x4_t_ operator<<(const int num) const { return _mm_slli_epi32(val, num); }
+	inline const _uint32x4_t_ operator>>(const int num) const { return _mm_srli_epi32(val, num); }
 	inline const uint32_t operator[](const int num) const { return ((uint32_t*)&val)[num]; }
  protected:
 	__m128i val;
 };
 
 // non-member overload
-inline const uint32x4_t operator+(const uint32_t left, const uint32x4_t &right) { return _mm_add_epi32(_mm_set1_epi32((int)left), right); }
+inline const _uint32x4_t_ operator+(const uint32_t left, const _uint32x4_t_ &right) { return _mm_add_epi32(_mm_set1_epi32((int)left), right); }
 
 
 //
@@ -100,7 +100,7 @@ inline const uint32x4_t operator+(const uint32_t left, const uint32x4_t &right) 
 #define bswap_32x4(x) ((((x) << 24) & 0xff000000u) | (((x) << 8) & 0x00ff0000u) \
 					 | (((x) >> 8) & 0x0000ff00u) | (((x) >> 24) & 0x000000ffu))
 
-static __inline uint32x4_t swab32x4(const uint32x4_t &v)
+static __inline _uint32x4_t_ swab32x4(const _uint32x4_t_ &v)
 {
 	return bswap_32x4(v);
 }
@@ -129,7 +129,7 @@ static const uint32_t sha256_k[64] = {
 	0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-void sha256_initx4(uint32x4_t *statex4)
+void sha256_initx4(_uint32x4_t_ *statex4)
 {
 	for (int i=0; i<8; ++i)
 		statex4[i] = sha256_h[i];
@@ -165,11 +165,11 @@ void sha256_initx4(uint32x4_t *statex4)
  * SHA256 block compression function.  The 256-bit state is transformed via
  * the 512-bit input block to produce a new state.
  */
-void sha256_transformx4(uint32x4_t *state, const uint32x4_t *block, int swap)
+void sha256_transformx4(_uint32x4_t_ *state, const _uint32x4_t_ *block, int swap)
 {
-	uint32x4_t W[64];
-	uint32x4_t S[8];
-	uint32x4_t t0, t1;
+	_uint32x4_t_ W[64];
+	_uint32x4_t_ S[8];
+	_uint32x4_t_ t0, t1;
 	int i;
 
 	/* 1. Prepare message schedule W. */
@@ -264,9 +264,9 @@ static const uint32_t sha256d_hash1[16] = {
 	0x00000000, 0x00000000, 0x00000000, 0x00000100
 };
 
-static void sha256dx4(uint32x4_t *hash, uint32x4_t *data)
+static void sha256dx4(_uint32x4_t_ *hash, _uint32x4_t_ *data)
 {
-	uint32x4_t S[16];
+	_uint32x4_t_ S[16];
 
 	sha256_initx4(S);
 	sha256_transformx4(S, data, 0);
@@ -277,7 +277,7 @@ static void sha256dx4(uint32x4_t *hash, uint32x4_t *data)
 	sha256_transformx4(hash, S, 0);
 }
 
-static inline void sha256d_preextendx4(uint32x4_t *W)
+static inline void sha256d_preextendx4(_uint32x4_t_ *W)
 {
 	W[16] = s1(W[14]) + W[ 9] + s0(W[ 1]) + W[ 0];
 	W[17] = s1(W[15]) + W[10] + s0(W[ 2]) + W[ 1];
@@ -297,19 +297,19 @@ static inline void sha256d_preextendx4(uint32x4_t *W)
 	W[31] =                     s0(W[16]) + W[15];
 }
 
-static inline void sha256d_prehashx4(uint32x4_t *S, const uint32x4_t *W)
+static inline void sha256d_prehashx4(_uint32x4_t_ *S, const _uint32x4_t_ *W)
 {
-	uint32x4_t t0, t1;
+	_uint32x4_t_ t0, t1;
 	RNDr(S, W, 0);
 	RNDr(S, W, 1);
 	RNDr(S, W, 2);
 }
 
-static inline void sha256d_msx4(uint32x4_t *hash, uint32x4_t *W,
+static inline void sha256d_msx4(_uint32x4_t_ *hash, _uint32x4_t_ *W,
 	const uint32_t *midstate, const uint32_t *prehash)
 {
-	uint32x4_t S[64];
-	uint32x4_t t0, t1;
+	_uint32x4_t_ S[64];
+	_uint32x4_t_ t0, t1;
 	int i;
 
 	S[18] = W[18];
@@ -516,24 +516,24 @@ static inline void sha256d_msx4(uint32x4_t *hash, uint32x4_t *W,
 // Code taken from original scrypt.cpp and vectorized with minimal changes.
 //
 
-static const uint32x4_t keypadx4[12] = {
+static const _uint32x4_t_ keypadx4[12] = {
 	0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00000280
 };
-static const uint32x4_t innerpadx4[11] = {
+static const _uint32x4_t_ innerpadx4[11] = {
 	0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x000004a0
 };
-static const uint32x4_t outerpadx4[8] = {
+static const _uint32x4_t_ outerpadx4[8] = {
 	0x80000000, 0, 0, 0, 0, 0, 0, 0x00000300
 };
-static const uint32x4_t finalblkx4[16] = {
+static const _uint32x4_t_ finalblkx4[16] = {
 	0x00000001, 0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00000620
 };
 
-static inline void HMAC_SHA256_80_initx4(const uint32x4_t *key,
-	uint32x4_t *tstate, uint32x4_t *ostate)
+static inline void HMAC_SHA256_80_initx4(const _uint32x4_t_ *key,
+	_uint32x4_t_ *tstate, _uint32x4_t_ *ostate)
 {
-	uint32x4_t ihash[8];
-	uint32x4_t pad[16];
+	_uint32x4_t_ ihash[8];
+	_uint32x4_t_ pad[16];
 	int i;
 
 	/* tstate is assumed to contain the midstate of key */
@@ -557,11 +557,11 @@ static inline void HMAC_SHA256_80_initx4(const uint32x4_t *key,
 	sha256_transformx4(tstate, pad, 0);
 }
 
-static inline void PBKDF2_SHA256_80_128x4(const uint32x4_t *tstate,
-	const uint32x4_t *ostate, const uint32x4_t *salt, uint32x4_t *output)
+static inline void PBKDF2_SHA256_80_128x4(const _uint32x4_t_ *tstate,
+	const _uint32x4_t_ *ostate, const _uint32x4_t_ *salt, _uint32x4_t_ *output)
 {
-	uint32x4_t istate[8], ostate2[8];
-	uint32x4_t ibuf[16], obuf[16];
+	_uint32x4_t_ istate[8], ostate2[8];
+	_uint32x4_t_ ibuf[16], obuf[16];
 	int i, j;
 
 	memcpy(istate, tstate, 4*32);
@@ -583,10 +583,10 @@ static inline void PBKDF2_SHA256_80_128x4(const uint32x4_t *tstate,
 	}
 }
 
-static inline void PBKDF2_SHA256_128_32x4(uint32x4_t *tstate, uint32x4_t *ostate,
-	const uint32x4_t *salt, uint32x4_t *output)
+static inline void PBKDF2_SHA256_128_32x4(_uint32x4_t_ *tstate, _uint32x4_t_ *ostate,
+	const _uint32x4_t_ *salt, _uint32x4_t_ *output)
 {
-	uint32x4_t buf[16];
+	_uint32x4_t_ buf[16];
 	int i;
 
 	sha256_transformx4(tstate, salt, 1);
@@ -754,11 +754,11 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 
 	bool sha_on_cpu = (parallel < 2);
 	bool sha_multithreaded = (parallel == 1);
-	uint32x4_t* datax4[2]   = { sha_on_cpu ? new uint32x4_t[throughput/4 * 20] : NULL, sha_on_cpu ? new uint32x4_t[throughput/4 * 20] : NULL };
-	uint32x4_t* hashx4[2]   = { sha_on_cpu ? new uint32x4_t[throughput/4 * 8]  : NULL, sha_on_cpu ? new uint32x4_t[throughput/4 * 8]  : NULL };
-	uint32x4_t* tstatex4[2] = { sha_on_cpu ? new uint32x4_t[throughput/4 * 8]  : NULL, sha_on_cpu ? new uint32x4_t[throughput/4 * 8]  : NULL };
-	uint32x4_t* ostatex4[2] = { sha_on_cpu ? new uint32x4_t[throughput/4 * 8]  : NULL, sha_on_cpu ? new uint32x4_t[throughput/4 * 8]  : NULL };
-	uint32x4_t* Xx4[2]      = { sha_on_cpu ? new uint32x4_t[throughput/4 * 32] : NULL, sha_on_cpu ? new uint32x4_t[throughput/4 * 32] : NULL };
+	_uint32x4_t_* datax4[2]   = { sha_on_cpu ? new _uint32x4_t_[throughput/4 * 20] : NULL, sha_on_cpu ? new _uint32x4_t_[throughput/4 * 20] : NULL };
+	_uint32x4_t_* hashx4[2]   = { sha_on_cpu ? new _uint32x4_t_[throughput/4 * 8]  : NULL, sha_on_cpu ? new _uint32x4_t_[throughput/4 * 8]  : NULL };
+	_uint32x4_t_* tstatex4[2] = { sha_on_cpu ? new _uint32x4_t_[throughput/4 * 8]  : NULL, sha_on_cpu ? new _uint32x4_t_[throughput/4 * 8]  : NULL };
+	_uint32x4_t_* ostatex4[2] = { sha_on_cpu ? new _uint32x4_t_[throughput/4 * 8]  : NULL, sha_on_cpu ? new _uint32x4_t_[throughput/4 * 8]  : NULL };
+	_uint32x4_t_* Xx4[2]      = { sha_on_cpu ? new _uint32x4_t_[throughput/4 * 32] : NULL, sha_on_cpu ? new _uint32x4_t_[throughput/4 * 32] : NULL };
 
 	// log n-factor
 	if (!opt_quiet && lastFactor != opt_nfactor) {
@@ -773,8 +773,8 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 	if (sha_on_cpu) {
 		for (int i = 0; i < throughput/4; ++i) {
 			for (int j = 0; j < 20; j++) {
-				datax4[0][20*i+j] = uint32x4_t(pdata[j]);
-				datax4[1][20*i+j] = uint32x4_t(pdata[j]);
+				datax4[0][20*i+j] = _uint32x4_t_(pdata[j]);
+				datax4[1][20*i+j] = _uint32x4_t_(pdata[j]);
 			}
 		}
 	}
@@ -791,7 +791,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 		if (sha_on_cpu)
 		{
 			for (int i = 0; i < throughput/4; i++) {
-				datax4[nxt][i * 20 + 19] = uint32x4_t(n+0, n+1, n+2, n+3);
+				datax4[nxt][i * 20 + 19] = _uint32x4_t_(n+0, n+1, n+2, n+3);
 				n += 4;
 			}
 			if (sha_multithreaded)
@@ -800,7 +800,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 				parallel_for (0, num_shares, [&](int share) {
 					for (int k = (share_workload*share)/4; k < (share_workload*(share+1))/4 && k < throughput/4; k++) {
 						for (int l = 0; l < 8; l++)
-							tstatex4[nxt][k * 8 + l] = uint32x4_t(midstate[l]);
+							tstatex4[nxt][k * 8 + l] = _uint32x4_t_(midstate[l]);
 							HMAC_SHA256_80_initx4(&datax4[nxt][k * 20], &tstatex4[nxt][k * 8], &ostatex4[nxt][k * 8]);
 							PBKDF2_SHA256_80_128x4(&tstatex4[nxt][k * 8], &ostatex4[nxt][k * 8], &datax4[nxt][k * 20], &Xx4[nxt][k * 32]);
 					}
@@ -810,7 +810,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 				for (int share = 0; share < num_shares; share++) {
 					for (int k = (share_workload*share)/4; k < (share_workload*(share+1))/4 && k < throughput/4; k++) {
 						for (int l = 0; l < 8; l++)
-							tstatex4[nxt][k * 8 + l] = uint32x4_t(midstate[l]);
+							tstatex4[nxt][k * 8 + l] = _uint32x4_t_(midstate[l]);
 							HMAC_SHA256_80_initx4(&datax4[nxt][k * 20], &tstatex4[nxt][k * 8], &ostatex4[nxt][k * 8]);
 							PBKDF2_SHA256_80_128x4(&tstatex4[nxt][k * 8], &ostatex4[nxt][k * 8], &datax4[nxt][k * 20], &Xx4[nxt][k * 32]);
 					}
@@ -821,7 +821,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 			{
 				for (int k = 0; k < throughput/4; k++) {
 					for (int l = 0; l < 8; l++)
-						tstatex4[nxt][k * 8 + l] = uint32x4_t(midstate[l]);
+						tstatex4[nxt][k * 8 + l] = _uint32x4_t_(midstate[l]);
 						HMAC_SHA256_80_initx4(&datax4[nxt][k * 20], &tstatex4[nxt][k * 8], &ostatex4[nxt][k * 8]);
 						PBKDF2_SHA256_80_128x4(&tstatex4[nxt][k * 8], &ostatex4[nxt][k * 8], &datax4[nxt][k * 20], &Xx4[nxt][k * 32]);
 				}
@@ -829,7 +829,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 
 			for (int i = 0; i < throughput/4; i++) {
 				for (int j = 0; j < 32; j++) {
-					uint32x4_t &t = Xx4[nxt][i * 32 + j];
+					_uint32x4_t_ &t = Xx4[nxt][i * 32 + j];
 					X[nxt][(4*i+0)*32+j] = t[0]; X[nxt][(4*i+1)*32+j] = t[1];
 					X[nxt][(4*i+2)*32+j] = t[2]; X[nxt][(4*i+3)*32+j] = t[3];
 				}
@@ -851,7 +851,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 
 			for (int i = 0; i < throughput/4; i++) {
 				for (int j = 0; j < 32; j++) {
-					Xx4[cur][i * 32 + j] = uint32x4_t(
+					Xx4[cur][i * 32 + j] = _uint32x4_t_(
 						X[cur][(4*i+0)*32+j], X[cur][(4*i+1)*32+j],
 						X[cur][(4*i+2)*32+j], X[cur][(4*i+3)*32+j]
 					);
@@ -883,7 +883,7 @@ int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned 
 
 			for (int i = 0; i < throughput/4; i++) {
 				for (int j = 0; j < 8; j++) {
-					uint32x4_t &t = hashx4[cur][i * 8 + j];
+					_uint32x4_t_ &t = hashx4[cur][i * 8 + j];
 					hash[cur][(4*i+0)*8+j] = t[0]; hash[cur][(4*i+1)*8+j] = t[1];
 					hash[cur][(4*i+2)*8+j] = t[2]; hash[cur][(4*i+3)*8+j] = t[3];
 				}
